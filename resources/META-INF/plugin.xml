@@ -30,6 +30,11 @@
 
   <actions>
     <!-- Add your actions here -->
+    <action id="IDEA-Plugin-CleanFiles.IDEA-Plugin-CleanFiles" class="com.kerwin.CleanFilesAction"
+            text="IDEA-Plugin-CleanFiles" description="Handle shit-like code.">
+      <add-to-group group-id="ToolsMenu" anchor="last"/>
+      <keyboard-shortcut keymap="$default" first-keystroke="ctrl alt C"/>
+    </action>
   </actions>
 
 </idea-plugin>
