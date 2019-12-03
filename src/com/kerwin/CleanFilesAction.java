@@ -8,6 +8,8 @@ import com.intellij.openapi.vfs.VirtualFile;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.List;
+
 /**
  * Created by Kerwin on 2019/11/28.
  */
@@ -15,7 +17,8 @@ public class CleanFilesAction extends AnAction {
 
     @Override
     public void actionPerformed(AnActionEvent event) {
-        // TODO: insert action logic here
+        // 初始化数据
+        FindHelper.cleanData();
 
         // 光标选中的虚拟路径
         VirtualFile virtualFile = getVirtualFile(event);
@@ -34,25 +37,19 @@ public class CleanFilesAction extends AnAction {
                 logger.error(e.getMessage(), new Throwable(e));
             }
 
+            // 获取未引用的图片
+            List<VirtualFile> unUsedImages = FindHelper.getUnUsedImages(project);
+
             System.out.println(FindHelper.READ_FILE_LIST);
 
             System.out.println(FindHelper.IMAGE_FILE_MAP);
+
+            System.out.println(unUsedImages);
         }
 
 
-        /*for (VirtualFile imageFile : resourceImages) {
-            String fileName = imageFile.getName();
-            for (VirtualFile sourceFile : files) {
-                if(sourceFile.getName().indexOf(".") > 0){
-                    PsiFile psiFile = PsiUtilBase.getPsiFile(project, sourceFile);
-                    String fileText = psiFile.getText();
-                    if (fileText.contains(fileName)) {
-                        referenceList.add(imageFile);
-                        break;
-                    }
-                }
-            }
-        }
+        /*
+
         VirtualFile file = virtualFile.getFileSystem().findFileByPath("C:\\Users\\Administrator\\Desktop\\Codes\\LeeCode");
         System.out.println(file);*/
 
@@ -67,7 +64,9 @@ public class CleanFilesAction extends AnAction {
             if (unusedImages.isEmpty()) {
                 Messages.showInfoMessage(project, "Nothing was found", "Tips");
             }
-        }*/
+        }
+
+        */
     }
 
     private Project getProject(AnActionEvent event) {
