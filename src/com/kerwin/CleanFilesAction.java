@@ -41,7 +41,11 @@ public class CleanFilesAction extends AnAction {
         VirtualFile file = virtualFile.getFileSystem().findFileByPath("C:\\Users\\Administrator\\Desktop\\Codes\\LeeCode");
         System.out.println(file);*/
 
+        // 获取选中文件的内容
         Project project = getProject(event);
+        PsiFile psiFile = PsiUtilBase.getPsiFile(project, virtualFile);
+        String fileText = psiFile.getText();
+        System.out.println(fileText);
 
         if (virtualFile != null && project != null) {
             List<VirtualFile> unusedImages = getUnusedImages(project, virtualFile);
