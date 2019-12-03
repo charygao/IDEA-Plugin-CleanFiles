@@ -16,8 +16,10 @@ target/
 ### IntelliJ IDEA ###
 .idea
 *.iws
-*.iml
 *.ipr
+
+# Plugin 构建必要文件
+!*.iml
 
 ### NetBeans ###
 /nbproject/private/
