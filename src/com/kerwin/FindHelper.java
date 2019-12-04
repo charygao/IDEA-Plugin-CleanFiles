@@ -28,6 +28,11 @@ public class FindHelper {
     public static Map<String, VirtualFile> IMAGE_FILE_MAP = new HashMap<>();
 
     /***
+     * 未使用文件大小
+     */
+    public static Long UN_USED_FILESIZE = 0L;
+
+    /***
      * 组装全量 可读文件-图片文件
      * @param systemFile 系统级别文件目录
      */
@@ -55,7 +60,7 @@ public class FindHelper {
                 IMAGE_FILE_MAP.put(child.getName(), child);
 
             // 递归处理
-            }  else {
+            }  else if (child.isDirectory()){
                 getReadFiles(child);
             }
         }
@@ -65,22 +70,28 @@ public class FindHelper {
      * 获取未引用的文件集合
      */
     public static List<VirtualFile> getUnUsedImages (Project project) {
-        // 返回结果
-        List<VirtualFile> result = new ArrayList<>();
 
-        Set<Map.Entry<String, VirtualFile>> entries = IMAGE_FILE_MAP.entrySet();
-        for (Map.Entry<String, VirtualFile> entry : entries) {
-            String fileName = entry.getKey();
+        // 图片集合Names
+        List<String> imageNames = new ArrayList<>(IMAGE_FILE_MAP.keySet());
 
-            for (VirtualFile virtualFile : READ_FILE_LIST) {
-                PsiFile psiFile = PsiUtilBase.getPsiFile(project, virtualFile);
-                String fileContent = psiFile.getText();
-                if (fileContent.indexOf(fileName) > 0) {
-                    result.add(entry.getValue());
+        // AC自动机检索暂有BUG - 用indexOf代替
+        for (VirtualFile virtualFile : READ_FILE_LIST) {
+            PsiFile psiFile = PsiUtilBase.getPsiFile(project, virtualFile);
+            String fileContent = psiFile.getText();
+
+            // 迭代器遍历
+            Iterator<String> it = imageNames.iterator();
+            while(it.hasNext()){
+                String imageName = it.next();
+                if (fileContent.indexOf(imageName) > 0) {
+                    IMAGE_FILE_MAP.remove(imageName);
+                    it.remove();
+                    System.out.println(imageName + " have been used, remove.");
                 }
             }
         }
-        return result;
+
+        return new ArrayList<>(IMAGE_FILE_MAP.values());
     }
 
     /***
@@ -147,8 +158,11 @@ public class FindHelper {
     private static String JAVA_SCRIPT = "JavaScript";
     private static String JAVA = "JAVA";
     private static String JSP = "JSP";
+    private static String SOURCE_MAP = "SourceMap";
+    private static String PROPERTIES = "Properties";
+    private static String MARKDOWN = "Markdown";
 
-    private static List<String> SUPPORT_FILES = Arrays.asList(JAVA, JSP, HTML, JAVA_SCRIPT, JSON, XML, VUE, CSS, LESS, PLAIN_TEXT);
+    private static List<String> SUPPORT_FILES = Arrays.asList(JAVA, JSP, HTML, JAVA_SCRIPT, JSON, XML, VUE, CSS, LESS, PLAIN_TEXT, SOURCE_MAP, PROPERTIES, MARKDOWN);
 
     private static List<String> IGNORE_FILES  = Arrays.asList(IDEA_TYPE, GIT_TYPE, SVN, NODE_MODULES, DS_STORE, IDEA_MODULE, OUT,TARGET);
 }

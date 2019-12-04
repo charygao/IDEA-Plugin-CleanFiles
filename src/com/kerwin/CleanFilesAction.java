@@ -5,6 +5,7 @@ import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.actionSystem.PlatformDataKeys;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
+import org.apache.commons.lang3.time.StopWatch;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -29,22 +30,33 @@ public class CleanFilesAction extends AnAction {
         String projectBasePath = project.getBasePath();
         VirtualFile systemFile = virtualFile.getFileSystem().findFileByPath(projectBasePath);
 
+        StopWatch stopWatch = new StopWatch();
+        stopWatch.start();
+
         if (null != systemFile) {
             // 文件分类
             try {
                 FindHelper.getReadFiles(systemFile);
+                logger.info("Get All ReadFiles consume time is: " + stopWatch.getTime());
             } catch (Exception e) {
                 logger.error(e.getMessage(), new Throwable(e));
             }
 
             // 获取未引用的图片
             List<VirtualFile> unUsedImages = FindHelper.getUnUsedImages(project);
+            logger.info("Get unUsedImages consume time is: " + stopWatch.getTime());
+
+            for (VirtualFile unUsedImage : unUsedImages) {
+                FindHelper.UN_USED_FILESIZE += unUsedImage.getLength();
+            }
 
             System.out.println(FindHelper.READ_FILE_LIST);
 
             System.out.println(FindHelper.IMAGE_FILE_MAP);
 
             System.out.println(unUsedImages);
+
+            System.out.println("Un Used File Size: " + (FindHelper.UN_USED_FILESIZE / 1024 / 1024));
         }
 
 
