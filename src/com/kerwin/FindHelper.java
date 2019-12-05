@@ -4,7 +4,12 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.PsiFile;
 import com.intellij.psi.util.PsiUtilBase;
+import com.kerwin.ac.trie.Emit;
+import com.kerwin.ac.trie.Trie;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import java.io.File;
 import java.util.*;
 
 /**
@@ -21,19 +26,14 @@ public class FindHelper {
     public static List<VirtualFile> READ_FILE_LIST = new ArrayList<>();
 
     /***
-     * 图片文件集
+     * 需要检索的文件集
      * Key  : 文件名
      * Value: VirtualFile
      */
-    public static Map<String, VirtualFile> IMAGE_FILE_MAP = new HashMap<>();
+    public static Map<String, VirtualFile> HANDLE_FILE_MAP = new HashMap<>();
 
     /***
-     * 未使用文件大小
-     */
-    public static Long UN_USED_FILESIZE = 0L;
-
-    /***
-     * 组装全量 可读文件-图片文件
+     * 组装全量 可读文件 - 需要检索的文件
      * @param systemFile 系统级别文件目录
      */
     public static void getReadFiles (VirtualFile systemFile) throws Exception {
@@ -44,8 +44,6 @@ public class FindHelper {
         VirtualFile[] children = systemFile.getChildren();
         for (VirtualFile child : children) {
 
-            System.out.println(child.getName() + " ---> " + child.getFileType().getName());
-
             // 跳过需要抛出的文件
             if (checkFileName(child)) {
                 continue;
@@ -54,10 +52,11 @@ public class FindHelper {
             // 处理支持读取的文件
             if (!child.isDirectory() && checkFileType(child)) {
                 READ_FILE_LIST.add(child);
+            }
 
-            // 处理图片资源文件
-            } else if (!child.isDirectory() && IMAGE_TYPE.equals(child.getFileType().getName())) {
-                IMAGE_FILE_MAP.put(child.getName(), child);
+            // 处理图片资源, CSS资源文件, JS资源文件
+            if (!child.isDirectory() && analyzeFileType(child)) {
+                HANDLE_FILE_MAP.put(child.getName(), child);
 
             // 递归处理
             }  else if (child.isDirectory()){
@@ -69,29 +68,46 @@ public class FindHelper {
     /***
      * 获取未引用的文件集合
      */
-    public static List<VirtualFile> getUnUsedImages (Project project) {
+    public static List<VirtualFile> getUnUsedFiles (Project project) {
 
-        // 图片集合Names
-        List<String> imageNames = new ArrayList<>(IMAGE_FILE_MAP.keySet());
+        // 待处理集合Names
+        List<String> fileNames = new ArrayList<>(HANDLE_FILE_MAP.keySet());
 
-        // AC自动机检索暂有BUG - 用indexOf代替
+        // 构建AC自动机
+        Trie trie = Trie.compile(fileNames);
+
+        // AC自动机检索
         for (VirtualFile virtualFile : READ_FILE_LIST) {
             PsiFile psiFile = PsiUtilBase.getPsiFile(project, virtualFile);
             String fileContent = psiFile.getText();
 
-            // 迭代器遍历
-            Iterator<String> it = imageNames.iterator();
-            while(it.hasNext()){
-                String imageName = it.next();
-                if (fileContent.indexOf(imageName) > 0) {
-                    IMAGE_FILE_MAP.remove(imageName);
-                    it.remove();
-                    System.out.println(imageName + " have been used, remove.");
+            Collection<Emit> emits = trie.parseText(fileContent);
+            for (Emit emit : emits) {
+
+                // 针对 CSS,JS文件处理 -> 如果得到的文件名包含在自身之中则跳过本次循环
+                if (analyzeFileType(virtualFile) && virtualFile.getName().equals(emit.getKeyword())) {
+                    continue;
                 }
+
+                HANDLE_FILE_MAP.remove(emit.getKeyword());
+                logger.debug("{} have been used, remove.", emit.getKeyword());
             }
         }
 
-        return new ArrayList<>(IMAGE_FILE_MAP.values());
+        return new ArrayList<>(HANDLE_FILE_MAP.values());
+    }
+
+    /***
+     * 获取文件集合大小
+     * @param files VirtualFile 文件
+     */
+    public static double getFilesSize (List<VirtualFile> files) {
+        long fileSzie = 0L;
+        for (VirtualFile virtualFile : files) {
+            File file = new File(virtualFile.getPath());
+            fileSzie += file.length();
+        }
+        return (double) (fileSzie / 1024 / 1024);
     }
 
     /***
@@ -126,13 +142,33 @@ public class FindHelper {
         return false;
     }
 
+    /***
+     * 判断文件是否加入检索目录 -> 暂处理 图片,CSS,JS文件
+     * @param file VirtualFile 文件
+     */
+    private static boolean analyzeFileType (VirtualFile file) {
+        String fileType = file.getFileType().getName();
+        if (IMAGE_TYPE.equals(fileType)) {
+            return true;
+        }
+
+        if (CSS.equals(fileType)) {
+            return true;
+        }
+
+        if (JAVA_SCRIPT.equals(fileType)) {
+            return true;
+        }
+        return false;
+    }
+
     /**
      * 初始化数据
      */
     public static void cleanData () {
         READ_FILE_LIST = new ArrayList<>();
 
-        IMAGE_FILE_MAP = new HashMap<>();
+        HANDLE_FILE_MAP = new HashMap<>();
     }
 
     private static String IMAGE_TYPE = "Image";
@@ -165,4 +201,6 @@ public class FindHelper {
     private static List<String> SUPPORT_FILES = Arrays.asList(JAVA, JSP, HTML, JAVA_SCRIPT, JSON, XML, VUE, CSS, LESS, PLAIN_TEXT, SOURCE_MAP, PROPERTIES, MARKDOWN);
 
     private static List<String> IGNORE_FILES  = Arrays.asList(IDEA_TYPE, GIT_TYPE, SVN, NODE_MODULES, DS_STORE, IDEA_MODULE, OUT,TARGET);
+
+    private static Logger logger = LoggerFactory.getLogger(FindHelper.class);
 }
