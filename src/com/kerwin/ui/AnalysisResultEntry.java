@@ -34,7 +34,7 @@ public class AnalysisResultEntry extends JPanel {
         this.unusedImages = unusedImages;
         this.setPreferredSize(new Dimension(600, 600));
         this.setLayout(new BoxLayout(this, BoxLayout.PAGE_AXIS));
-        this.add(getHeader(), BorderLayout.PAGE_START);
+        this.add(getHeader(unusedImages.size()), BorderLayout.PAGE_START);
         this.add(getJBScrollPane(unusedImages), BorderLayout.CENTER);
         this.add(getFooter(),BorderLayout.PAGE_END);
     }
@@ -74,7 +74,7 @@ public class AnalysisResultEntry extends JPanel {
         return new JBScrollPane(scrollContent);
     }
 
-    private JPanel getHeader() {
+    private JPanel getHeader(int size) {
         JPanel mHeader = new JPanel();
         mHeader.setLayout(new BoxLayout(mHeader,BoxLayout.LINE_AXIS));
         mHeader.setPreferredSize(new Dimension(600, 60));
@@ -89,7 +89,7 @@ public class AnalysisResultEntry extends JPanel {
         mHeader.add(Box.createRigidArea(new Dimension(10, 30)));
         JLabel jLabel = new JLabel();
         jLabel.setPreferredSize(new Dimension(200, 32));
-        jLabel.setText("Images Names");
+        jLabel.setText("Images Names, File Num:" + size);
         mHeader.add(jLabel);
         mHeader.add(Box.createHorizontalGlue());
         return mHeader;

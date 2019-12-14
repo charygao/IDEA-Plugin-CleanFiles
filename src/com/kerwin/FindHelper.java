@@ -56,7 +56,7 @@ public class FindHelper {
 
             // 处理图片资源, CSS资源文件, JS资源文件
             if (!child.isDirectory() && analyzeFileType(child)) {
-                HANDLE_FILE_MAP.put(child.getName(), child);
+                HANDLE_FILE_MAP.put(child.getParent().getName() + "/" + child.getName(), child);
 
             // 递归处理
             }  else if (child.isDirectory()){
